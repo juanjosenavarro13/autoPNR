@@ -11,8 +11,7 @@ function formatDate(date, direction) {
 }
 
 const acceptCookies = async (page) => {
-    const button = await page.$('button[id="onetrust-accept-btn-handler"]');
-    if (button) {
+    if (await page.$('button[id="onetrust-accept-btn-handler"]')) {
         return await page.click('button[id="onetrust-accept-btn-handler"]');
     }
     return true;

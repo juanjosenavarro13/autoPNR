@@ -2,8 +2,8 @@ const puppeteer = require('puppeteer-extra');
 const { executablePath } = require('puppeteer');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
-// const url = 'https://www.iberia.com/es/?language=es';
-const url = 'https://pree.iberia.es/es/?language=es';
+const url = 'https://www.iberia.com/es/?language=es';
+// const url = 'https://pree.iberia.es/es/?language=es';
 
 const { formatDate, acceptCookies, delay } = require('./utils');
 
@@ -68,6 +68,7 @@ const flightOptios = {
         await delay(100);
     } catch (e) {
         console.log(e);
+        await browser.close();
     } finally {
         await browser.close();
     }
@@ -132,12 +133,14 @@ const pagePassengers = async (page, flightOptios) => {
 };
 
 const pageAncillaries = async (page) => {
+    await page.waitForSelector('#GO_PAYMENTS_CONTINUE_BUTTON');
+    await delay(2);
     // contratar noseque
-    await page.waitForSelector(
-        '#upselling-prio-modal > div > div > footer > div > div.ib-content-buttons__content-right > a',
-        { timeout: 60000 }
-    );
-    await page.click('#upselling-prio-modal > div > div > footer > div > div.ib-content-buttons__content-right > a');
+    if (await page.$('#upselling-prio-modal > div > div > footer > div > div.ib-content-buttons__content-right > a')) {
+        await page.click(
+            '#upselling-prio-modal > div > div > footer > div > div.ib-content-buttons__content-right > a'
+        );
+    }
 
     // submit
     await page.waitForSelector('#GO_PAYMENTS_CONTINUE_BUTTON');
@@ -146,32 +149,52 @@ const pageAncillaries = async (page) => {
 };
 
 const pagePayments = async (page, flightOptios) => {
-    console.log('waiting for iframe with form to be ready.');
-    await page.waitForSelector('iframe');
-    console.log('iframe is ready. Loading iframe content');
+    delay(3);
+    await page.waitForSelector('#ibdc-number-frame');
+    const elementHandleNumber = await page.$('#ibdc-number-frame');
+    const frameNumber = await elementHandleNumber.contentFrame();
 
-    const elementHandle = await page.$('iframe');
-    const frame = await elementHandle.contentFrame();
+    await frameNumber.waitForSelector('#number');
+    await frameNumber.type('#number', flightOptios.payment.number);
 
-    console.log('filling form in iframe');
-    await page.waitForSelector('#number', { timeout: 60000 });
-    await frame.type('#number', '123', { delay: 100 });
+    await page.waitForSelector('#name');
+    await page.type('#name', flightOptios.payment.name);
 
+    await page.waitForSelector('#surnames');
+    await page.type('#surnames', flightOptios.payment.surname);
 
-    // await page.waitForSelector('#number', { timeout: 60000 });
-    // await page.focus('#number');
-    // await page.type('#number', 'flightOptios.payment.number');
+    await page.waitForSelector(
+        '#EXPIRY_DATE > .ib-select-date__action:nth-child(2) > .ib-select-date__list-ipt > .btn > .ui-select-placeholder'
+    );
+    await page.click(
+        '#EXPIRY_DATE > .ib-select-date__action:nth-child(2) > .ib-select-date__list-ipt > .btn > .ui-select-placeholder'
+    );
 
-    // await page.waitForSelector('#name');
-    // await page.type('#name', flightOptios.payment.name);
+    await page.waitForSelector('#ui-select-choices-row-1-0');
+    await page.click('#ui-select-choices-row-1-0');
 
-    // await page.waitForSelector('#surnames');
-    // await page.type('#surnames', flightOptios.payment.surname);
+    await page.waitForSelector(
+        '#EXPIRY_DATE > .ib-select-date__action:nth-child(3) > .ib-select-date__list-ipt > .btn > .ui-select-placeholder'
+    );
+    await page.click(
+        '#EXPIRY_DATE > .ib-select-date__action:nth-child(3) > .ib-select-date__list-ipt > .btn > .ui-select-placeholder'
+    );
 
-    // await page.waitForSelector('#number');
-    // await page.type('#number', flightOptios.payment.number);
+    await page.waitForSelector(
+        '.ui-select-choices > #ui-select-choices-2 > #ui-select-choices-row-2-0 > .ui-select-choices-row-inner > .ib-select-date__list-txt'
+    );
+    await page.click(
+        '.ui-select-choices > #ui-select-choices-2 > #ui-select-choices-row-2-0 > .ui-select-choices-row-inner > .ib-select-date__list-txt'
+    );
 
-    // await page.screenshot({ path: 'img/6.jpg', fullPage: true });
+    await page.waitForSelector('#ibdc-cvv-frame');
+    const elementHandleCcv = await page.$('#ibdc-number-frame');
+    const frameCcv = await elementHandleCcv.contentFrame();
+
+    await frameCcv.waitForSelector('#cvv');
+    await frameCcv.type('#number', flightOptios.payment.ccv);
+
+    await page.screenshot({ path: 'img/6.jpg', fullPage: true });
 };
 
 // =======================================
