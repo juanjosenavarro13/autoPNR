@@ -1,2 +1,3 @@
 # autoPNR
-node pnr.js
+
+node main.js

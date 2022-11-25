@@ -2,36 +2,9 @@ const puppeteer = require('puppeteer-extra');
 const { executablePath } = require('puppeteer');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
-const url = 'https://www.iberia.com/es/?language=es';
-// const url = 'https://pree.iberia.es/es/?language=es';
 
-const { formatDate, acceptCookies, delay } = require('./utils');
-
-const flightOptios = {
-    onlyWay: true,
-    date: { way: formatDate(new Date(), 'way'), return: formatDate(new Date(), 'return') },
-    flight: {
-        origin: 'Madrid (MAD)',
-        destiny: 'Bilbao (BIO)'
-    },
-    passengers: {
-        name: 'test',
-        surname: 'test',
-        email: 'test@test.es',
-        phone: '623456789'
-    },
-    payment: {
-        number: '4012999999999999',
-        name: 'test',
-        surname: 'test',
-        expiration: {
-            day: 1,
-            month: 1,
-            year: 2025
-        },
-        ccv: '123'
-    }
-};
+const { acceptCookies, delay } = require('./src/utils');
+const { flightOptios } = require('./src/config');
 
 (async function main() {
     const browser = await puppeteer.launch({
@@ -55,7 +28,7 @@ const flightOptios = {
     });
     try {
         const [page] = await browser.pages();
-        await page.goto(url);
+        await page.goto(flightOptios.url);
 
         await acceptCookies(page);
 
@@ -64,8 +37,6 @@ const flightOptios = {
         await pagePassengers(page, flightOptios);
         await pageAncillaries(page);
         await pagePayments(page, flightOptios);
-
-        await delay(100);
     } catch (e) {
         console.log(e);
         await browser.close();
@@ -77,6 +48,7 @@ const flightOptios = {
 //  ==============================
 
 const pageFlight = async (page, flightOptios) => {
+    console.log('start pageFlight');
     // write origin and destination for flight
     await page.waitForSelector('#flight_origin1');
     await page.evaluate((flightOptios) => {
@@ -101,9 +73,20 @@ const pageFlight = async (page, flightOptios) => {
     await page.waitForSelector('#buttonSubmit1 > span.ibe-button__text');
     await page.screenshot({ path: 'img/1.jpg', fullPage: true });
     await page.click('#buttonSubmit1 > span.ibe-button__text');
+    console.log('end pageFlight');
 };
 
 const pageDispo = async (page) => {
+    console.log('start pageDispo');
+    // blackfriday
+    const selectorBlackFriday =
+        'body > main > div:nth-child(1) > ib-new-main-header > div.lc-a21-wrapper > div.lc-a21-strip-info.mnt-111-W1220-strip > div > div > div > label.lc-a21-details-btn > div.lc-a21-details-btn-shr';
+    await page.waitForSelector(selectorBlackFriday, { timeout: 30000 });
+    try {
+        await page.click(selectorBlackFriday);
+    } catch (error) {
+        console.log('boton de black friday oculto');
+    }
     // select dispo
     await page.waitForSelector('#bbki-slice-info-cabin-0-0-E-btn > span', { timeout: 60000 });
     await page.screenshot({ path: 'img/2.jpg', fullPage: true });
@@ -115,9 +98,11 @@ const pageDispo = async (page) => {
     await page.waitForSelector('#AVAILABILITY_CONTINUE_BUTTON');
     await page.screenshot({ path: 'img/3.jpg', fullPage: true });
     await page.click('#AVAILABILITY_CONTINUE_BUTTON');
+    console.log('end pageDispo');
 };
 
 const pagePassengers = async (page, flightOptios) => {
+    console.log('start pagePassengers');
     // write form passenger
     await page.waitForSelector('#name_0', { timeout: 60000 });
     await page.type('#name_0', flightOptios.passengers.name);
@@ -130,25 +115,31 @@ const pagePassengers = async (page, flightOptios) => {
     await page.waitForSelector('#AVAILABILITY_CONTINUE_BUTTON');
     await page.screenshot({ path: 'img/4.jpg', fullPage: true });
     await page.click('#AVAILABILITY_CONTINUE_BUTTON');
+    console.log('end pagePassengers');
 };
 
 const pageAncillaries = async (page) => {
+    console.log('start pageAncillaries');
     await page.waitForSelector('#GO_PAYMENTS_CONTINUE_BUTTON');
     await delay(2);
     // contratar noseque
-    if (await page.$('#upselling-prio-modal > div > div > footer > div > div.ib-content-buttons__content-right > a')) {
+    try {
         await page.click(
             '#upselling-prio-modal > div > div > footer > div > div.ib-content-buttons__content-right > a'
         );
+    } catch (error) {
+        console.log('boton de contratar noseque oculto');
     }
 
     // submit
     await page.waitForSelector('#GO_PAYMENTS_CONTINUE_BUTTON');
     await page.screenshot({ path: 'img/5.jpg', fullPage: true });
     await page.click('#GO_PAYMENTS_CONTINUE_BUTTON');
+    console.log('end pageAncillaries');
 };
 
 const pagePayments = async (page, flightOptios) => {
+    console.log('start pagePayments');
     delay(3);
     await page.waitForSelector('#ibdc-number-frame');
     const elementHandleNumber = await page.$('#ibdc-number-frame');
@@ -188,13 +179,18 @@ const pagePayments = async (page, flightOptios) => {
     );
 
     await page.waitForSelector('#ibdc-cvv-frame');
-    const elementHandleCcv = await page.$('#ibdc-number-frame');
+    const elementHandleCcv = await page.$('#ibdc-cvv-frame');
     const frameCcv = await elementHandleCcv.contentFrame();
 
     await frameCcv.waitForSelector('#cvv');
-    await frameCcv.type('#number', flightOptios.payment.ccv);
+    await frameCcv.type('#cvv', flightOptios.payment.ccv);
 
     await page.screenshot({ path: 'img/6.jpg', fullPage: true });
+
+    await page.click('#check_terms_conditions');
+    // submit
+    await page.click('#pmt-total-price-pay-btn > span');
+    console.log('end pagePayments');
 };
 
 // =======================================
