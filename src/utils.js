@@ -4,9 +4,9 @@ function padTo2Digits(num) {
 
 function formatDate(date, direction) {
     if (direction === 'return') {
-        return [padTo2Digits(date.getDate() + 8), padTo2Digits(date.getMonth() + 1), date.getFullYear()].join('/');
+        return [padTo2Digits(date.getDate() + 8), padTo2Digits(date.getMonth() + 1), date.getFullYear()].join('');
     } else if (direction === 'way') {
-        return [padTo2Digits(date.getDate() + 1), padTo2Digits(date.getMonth() + 1), date.getFullYear()].join('/');
+        return [padTo2Digits(date.getDate() + 1), padTo2Digits(date.getMonth() + 1), date.getFullYear()].join('');
     }
 }
 
@@ -17,12 +17,8 @@ const acceptCookies = async (page) => {
     return true;
 };
 
-function delay(time) {
-    return new Promise((resolve) => setTimeout(resolve, time * 1000));
-}
 
 module.exports = {
     formatDate,
-    acceptCookies,
-    delay
+    acceptCookies
 };

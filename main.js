@@ -3,7 +3,7 @@ const { executablePath } = require('puppeteer');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 
-const { acceptCookies, delay } = require('./src/utils');
+const { acceptCookies } = require('./src/utils');
 const { flightOptios } = require('./src/config');
 
 (async function main() {
@@ -37,6 +37,7 @@ const { flightOptios } = require('./src/config');
         await pagePassengers(page, flightOptios);
         await pageAncillaries(page);
         await pagePayments(page, flightOptios);
+        await pageConfirmation(page);
     } catch (e) {
         console.log(e);
         await browser.close();
@@ -45,28 +46,48 @@ const { flightOptios } = require('./src/config');
     }
 })();
 
-//  ==============================
+//  ==================================================================================================
 
 const pageFlight = async (page, flightOptios) => {
     console.log('start pageFlight');
     // write origin and destination for flight
     await page.waitForSelector('#flight_origin1');
-    await page.evaluate((flightOptios) => {
-        document.querySelector('#flight_origin1').value = flightOptios.flight.origin;
-        document.querySelector('#flight_destiny1').value = flightOptios.flight.destiny;
-    }, flightOptios);
+    await page.waitForSelector('#flight_destiny1');
+
+    // get values of flight (origin and destiny)
+    const valuesFlight = await page.evaluate(() => {
+        const valueOrigin = document.querySelector('#flight_origin1').value;
+        const valueDestiny = document.querySelector('#flight_destiny1').value;
+
+        return [valueOrigin, valueDestiny];
+    });
+
+    // delete default values origin and destiny
+    await page.click('#flight_origin1');
+    for (valuesFlight[0] of valuesFlight[0]) {
+        await page.keyboard.press('Backspace');
+    }
+    await page.click('#flight_destiny1');
+    for (valuesFlight[1] of valuesFlight[1]) {
+        await page.keyboard.press('Backspace');
+    }
+
+    // write new values origin and destiny
+    await page.type('#flight_origin1', flightOptios.flight.origin);
+    await page.type('#flight_destiny1', flightOptios.flight.destiny);
 
     // select only way
     if (flightOptios.onlyWay) {
+        await page.waitForSelector('#ticketops-seeker-button > span.ui-selectmenu-text');
         await page.click('#ticketops-seeker-button > span.ui-selectmenu-text');
         await page.waitForSelector('#ui-id-13 > span');
         await page.click('#ui-id-13 > span');
 
         // select date
-        await page.click('#flight_round_date1');
-        await page.evaluate((flightOptios) => {
-            document.querySelector('#flight_round_date1').value = flightOptios.date.way;
-        }, flightOptios);
+        await page.waitForSelector('#flight_round_date1');
+        await page.type('#flight_round_date1', flightOptios.date.way);
+    } else {
+        // en desarrollo ida y vuelta
     }
 
     // submit
@@ -78,22 +99,19 @@ const pageFlight = async (page, flightOptios) => {
 
 const pageDispo = async (page) => {
     console.log('start pageDispo');
-    // blackfriday
-    const selectorBlackFriday =
-        'body > main > div:nth-child(1) > ib-new-main-header > div.lc-a21-wrapper > div.lc-a21-strip-info.mnt-111-W1220-strip > div > div > div > label.lc-a21-details-btn > div.lc-a21-details-btn-shr';
-    try {
-        await page.waitForSelector(selectorBlackFriday);
-        await page.click(selectorBlackFriday);
-    } catch (error) {
-        console.log('boton de black friday oculto');
-    }
+    await page.waitForSelector('#header-commons-iberia-logo-home-link > img', { timeout: 60000 });
+
     // select dispo
-    await page.waitForSelector('#bbki-slice-info-cabin-0-0-E-btn > span', { timeout: 60000 });
+    await page.waitForSelector('#bbki-slice-info-cabin-0-0-E-btn > span');
     await page.screenshot({ path: 'img/2.jpg', fullPage: true });
     await page.click('#bbki-slice-info-cabin-0-0-E-btn > span');
     if ((await page.$('#bbki-slice-info-cabin-0-1-E-btn > span')) !== null) {
         await page.click('#bbki-slice-info-cabin-0-1-E-btn > span');
+        if ((await page.$('#bbki-slice-info-cabin-0-2-E-btn > span')) !== null) {
+            await page.click('#bbki-slice-info-cabin-0-2-E-btn > span');
+        }
     }
+
     // submit
     await page.waitForSelector('#AVAILABILITY_CONTINUE_BUTTON');
     await page.screenshot({ path: 'img/3.jpg', fullPage: true });
@@ -103,12 +121,17 @@ const pageDispo = async (page) => {
 
 const pagePassengers = async (page, flightOptios) => {
     console.log('start pagePassengers');
+    await page.waitForSelector('#header-commons-iberia-logo-home-link > img', { timeout: 60000 });
     // write form passenger
-    await page.waitForSelector('#name_0', { timeout: 60000 });
+    await page.waitForSelector('#name_0');
     await page.type('#name_0', flightOptios.passengers.name);
+    await page.waitForSelector('#first_surname_0');
     await page.type('#first_surname_0', flightOptios.passengers.surname);
+    await page.waitForSelector('#IBAIRP_CONTACT_FORM_EMAIL');
     await page.type('#IBAIRP_CONTACT_FORM_EMAIL', flightOptios.passengers.email);
+    await page.waitForSelector('#IBAIRP_CONTACT_FORM_REPEATED_EMAIL');
     await page.type('#IBAIRP_CONTACT_FORM_REPEATED_EMAIL', flightOptios.passengers.email);
+    await page.waitForSelector('#IBAIRP_CONTACT_FORM_PHONE');
     await page.type('#IBAIRP_CONTACT_FORM_PHONE', flightOptios.passengers.phone);
 
     // submit
@@ -120,16 +143,7 @@ const pagePassengers = async (page, flightOptios) => {
 
 const pageAncillaries = async (page) => {
     console.log('start pageAncillaries');
-    await page.waitForSelector('#GO_PAYMENTS_CONTINUE_BUTTON', { timeout: 60000 });
-    await delay(2);
-    // contratar noseque
-    try {
-        await page.click(
-            '#upselling-prio-modal > div > div > footer > div > div.ib-content-buttons__content-right > a'
-        );
-    } catch (error) {
-        console.log('boton de contratar noseque oculto');
-    }
+    await page.waitForSelector('#header-commons-iberia-logo-home-link > img', { timeout: 60000 });
 
     // submit
     await page.waitForSelector('#GO_PAYMENTS_CONTINUE_BUTTON');
@@ -140,7 +154,8 @@ const pageAncillaries = async (page) => {
 
 const pagePayments = async (page, flightOptios) => {
     console.log('start pagePayments');
-    delay(3);
+    await page.waitForSelector('#header-commons-iberia-logo-home-link > img', { timeout: 60000 });
+
     await page.waitForSelector('#ibdc-number-frame');
     const elementHandleNumber = await page.$('#ibdc-number-frame');
     const frameNumber = await elementHandleNumber.contentFrame();
@@ -199,13 +214,12 @@ const pagePayments = async (page, flightOptios) => {
     console.log('end pagePayments');
 };
 
-const pageConfirmation = async (page, flightOptios) => {
+const pageConfirmation = async (page) => {
     console.log('start pageConfirmation');
 
-    delay(10);
     await page.screenshot({ path: 'img/7.jpg', fullPage: true });
 
     console.log('end pageConfirmation');
 };
 
-// =======================================
+// ========================================================================================================================

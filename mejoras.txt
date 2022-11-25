@@ -1,2 +1,1 @@
-- validar si existe boton de blackfriday (validar si ha llegado ya a ancillaries)
-- refactorizar todas las esperas (wait for selector)
+- validar pagos y copiar codigo de confirmacion
