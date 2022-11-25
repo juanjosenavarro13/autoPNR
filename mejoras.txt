@@ -1,2 +1,2 @@
-- reducir los waitForSelector
-- reducir el tiempo en payments
+- validar si existe boton de blackfriday (validar si ha llegado ya a ancillaries)
+- refactorizar todas las esperas (wait for selector)

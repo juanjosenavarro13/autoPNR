@@ -81,8 +81,8 @@ const pageDispo = async (page) => {
     // blackfriday
     const selectorBlackFriday =
         'body > main > div:nth-child(1) > ib-new-main-header > div.lc-a21-wrapper > div.lc-a21-strip-info.mnt-111-W1220-strip > div > div > div > label.lc-a21-details-btn > div.lc-a21-details-btn-shr';
-    await page.waitForSelector(selectorBlackFriday, { timeout: 30000 });
     try {
+        await page.waitForSelector(selectorBlackFriday);
         await page.click(selectorBlackFriday);
     } catch (error) {
         console.log('boton de black friday oculto');
@@ -94,7 +94,7 @@ const pageDispo = async (page) => {
     if ((await page.$('#bbki-slice-info-cabin-0-1-E-btn > span')) !== null) {
         await page.click('#bbki-slice-info-cabin-0-1-E-btn > span');
     }
-    // go next page (passenger)
+    // submit
     await page.waitForSelector('#AVAILABILITY_CONTINUE_BUTTON');
     await page.screenshot({ path: 'img/3.jpg', fullPage: true });
     await page.click('#AVAILABILITY_CONTINUE_BUTTON');
@@ -120,7 +120,7 @@ const pagePassengers = async (page, flightOptios) => {
 
 const pageAncillaries = async (page) => {
     console.log('start pageAncillaries');
-    await page.waitForSelector('#GO_PAYMENTS_CONTINUE_BUTTON');
+    await page.waitForSelector('#GO_PAYMENTS_CONTINUE_BUTTON', { timeout: 60000 });
     await delay(2);
     // contratar noseque
     try {
@@ -187,10 +187,25 @@ const pagePayments = async (page, flightOptios) => {
 
     await page.screenshot({ path: 'img/6.jpg', fullPage: true });
 
-    await page.click('#check_terms_conditions');
+    await page.waitForSelector(
+        '#pmt-breakdown > fieldset > section > div.ib-box.ng-scope.ib-box--medium.ib-box--separator.u-mb-none > div.ib-check.ib-check--regular > label > span'
+    );
+    await page.click(
+        '#pmt-breakdown > fieldset > section > div.ib-box.ng-scope.ib-box--medium.ib-box--separator.u-mb-none > div.ib-check.ib-check--regular > label > span'
+    );
     // submit
+    await page.waitForSelector('#pmt-total-price-pay-btn > span');
     await page.click('#pmt-total-price-pay-btn > span');
     console.log('end pagePayments');
+};
+
+const pageConfirmation = async (page, flightOptios) => {
+    console.log('start pageConfirmation');
+
+    delay(10);
+    await page.screenshot({ path: 'img/7.jpg', fullPage: true });
+
+    console.log('end pageConfirmation');
 };
 
 // =======================================
