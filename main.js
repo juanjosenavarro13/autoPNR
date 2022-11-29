@@ -80,8 +80,8 @@ const pageFlight = async (page, flightOptios) => {
     if (flightOptios.onlyWay) {
         await page.waitForSelector('#ticketops-seeker-button > span.ui-selectmenu-text');
         await page.click('#ticketops-seeker-button > span.ui-selectmenu-text');
-        await page.waitForSelector('#ui-id-13 > span');
-        await page.click('#ui-id-13 > span');
+        await page.waitForSelector('#ticketops-seeker-menu > li:nth-child(2)');
+        await page.click('#ticketops-seeker-menu > li:nth-child(2)');
 
         // select date
         await page.waitForSelector('#flight_round_date1');
@@ -92,8 +92,8 @@ const pageFlight = async (page, flightOptios) => {
 
     // submit
     await page.waitForSelector('#buttonSubmit1 > span.ibe-button__text');
-    await page.screenshot({ path: 'img/1.jpg', fullPage: true });
     await page.click('#buttonSubmit1 > span.ibe-button__text');
+    await page.screenshot({ path: 'img/1.jpg', fullPage: false });
     console.log('end pageFlight');
 };
 
@@ -103,7 +103,7 @@ const pageDispo = async (page) => {
 
     // select dispo
     await page.waitForSelector('#bbki-slice-info-cabin-0-0-E-btn > span');
-    await page.screenshot({ path: 'img/2.jpg', fullPage: true });
+    await page.screenshot({ path: 'img/2.jpg', fullPage: false });
     await page.click('#bbki-slice-info-cabin-0-0-E-btn > span');
     if ((await page.$('#bbki-slice-info-cabin-0-1-E-btn > span')) !== null) {
         await page.click('#bbki-slice-info-cabin-0-1-E-btn > span');
@@ -114,7 +114,7 @@ const pageDispo = async (page) => {
 
     // submit
     await page.waitForSelector('#AVAILABILITY_CONTINUE_BUTTON');
-    await page.screenshot({ path: 'img/3.jpg', fullPage: true });
+    await page.screenshot({ path: 'img/3.jpg', fullPage: false });
     await page.click('#AVAILABILITY_CONTINUE_BUTTON');
     console.log('end pageDispo');
 };
@@ -136,7 +136,7 @@ const pagePassengers = async (page, flightOptios) => {
 
     // submit
     await page.waitForSelector('#AVAILABILITY_CONTINUE_BUTTON');
-    await page.screenshot({ path: 'img/4.jpg', fullPage: true });
+    await page.screenshot({ path: 'img/4.jpg', fullPage: false });
     await page.click('#AVAILABILITY_CONTINUE_BUTTON');
     console.log('end pagePassengers');
 };
@@ -147,7 +147,7 @@ const pageAncillaries = async (page) => {
 
     // submit
     await page.waitForSelector('#GO_PAYMENTS_CONTINUE_BUTTON');
-    await page.screenshot({ path: 'img/5.jpg', fullPage: true });
+    await page.screenshot({ path: 'img/5.jpg', fullPage: false });
     await page.click('#GO_PAYMENTS_CONTINUE_BUTTON');
     console.log('end pageAncillaries');
 };
@@ -200,7 +200,7 @@ const pagePayments = async (page, flightOptios) => {
     await frameCcv.waitForSelector('#cvv');
     await frameCcv.type('#cvv', flightOptios.payment.ccv);
 
-    await page.screenshot({ path: 'img/6.jpg', fullPage: true });
+    await page.screenshot({ path: 'img/6.jpg', fullPage: false });
 
     await page.waitForSelector(
         '#pmt-breakdown > fieldset > section > div.ib-box.ng-scope.ib-box--medium.ib-box--separator.u-mb-none > div.ib-check.ib-check--regular > label > span'
@@ -217,7 +217,15 @@ const pagePayments = async (page, flightOptios) => {
 const pageConfirmation = async (page) => {
     console.log('start pageConfirmation');
 
-    await page.screenshot({ path: 'img/7.jpg', fullPage: true });
+    await page.waitForSelector(
+        'body > main > div:nth-child(1) > ib-new-main-header > div > div > div > div > div > ib-main-header > header > div > div > div > div > div.navbar-header.u-pl > a > figure > img'
+    );
+
+
+    const PNR = await page.evaluate(() => document.querySelector('body > main > div:nth-child(2) > main > div.container > equal-height:nth-child(2) > div > div > div > div > div.ib-box__wrapper.ib-box__wrapper--small > div > div > span').innerText);
+    console.log('TU PNR ES: ', PNR);
+
+    await page.screenshot({ path: 'img/7.jpg', fullPage: false });
 
     console.log('end pageConfirmation');
 };

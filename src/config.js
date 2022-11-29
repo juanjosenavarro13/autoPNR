@@ -1,6 +1,6 @@
 const { formatDate } = require('./utils');
 const flightOptios = {
-  url: 'https://iberia.es/es/?language=es',
+  url: 'https://pree.iberia.es/es/?language=es',
   onlyWay: true,
   date: { way: formatDate(new Date(), 'way'), return: formatDate(new Date(), 'return') },
   flight: {
